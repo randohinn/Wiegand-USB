@@ -35,14 +35,15 @@ ISR(PCINT2_vect) {
 		 data = data + 0x01;
 		 dataCount++;
 	}
+	_delay_ms(1);
 }
 
 int main(void)
 {
 	CLKPR=128;
 	CLKPR=0;
-	DDRD |= (1 << PD1);
-	DDRD &= ~(1 << PD0);
+	DDRD |= (1 << PIND1);
+	DDRD &= ~(1 << PIND0);
 
 	UCSR0B |= (1 << TXEN0) | (1 << RXEN0);   // Turn on the transmission and reception circuitry
 	UCSR0C |= (1 << UCSZ00) | (1 << UCSZ01); // Use 8-bit character sizes
@@ -52,10 +53,11 @@ int main(void)
 	
 	DDRC |= (1 << DDC3);
 	DDRC |= (1 << DDC0);
+	DDRB &= (1 << DDB0);
+
 	
-	
-	DDRD &= ~(1 << PIND6);
-	DDRD &= ~(1 << PIND7);
+	DDRD &= ~(1 << DDD6);
+	DDRD &= ~(1 << DDD7);
 	
 	PCMSK2 |= (1<<PCINT22) | (1<<PCINT23);
 
@@ -63,18 +65,29 @@ int main(void)
 	
 	sei();
 	
-    /* Replace with your application code */
     while (1) 
     {
-
-		if(dataCount >= 26) {
-			char buffer[16 * sizeof (long int) + 1 ];
-			ltoa(data, buffer, 2);
-			serial_send(buffer);
-			data = 0;
-			dataCount = 0;
-
+	
+		if(PINB & (1<<PINB0)) { //26 bit
+			PORTC &= ~(1<< PORTC3);
+			if(dataCount == 26) {
+				char buffer[8 * sizeof (long int) + 1 ];
+				ltoa(data, buffer, 2);
+				serial_send(buffer);
+				data = 0;
+				dataCount = 0;
+			}
+		} else {  // 34bit
+			PORTC |= (1<< PORTC3);
+			if(dataCount == 34) {
+				char buffer[8 * sizeof (long int) + 1 ];
+				ltoa(data, buffer, 2);
+				serial_send(buffer);
+				data = 0;
+				dataCount = 0;
+			}
 		}
+		
 
 	}
 }
